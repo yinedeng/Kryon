@@ -1,7 +1,7 @@
 # Kryon
 FPGA Image Process, Connected Component Analysis-Labeling
 
-This repository contains some verilog codes for Image Process, like image filtering, image smoothing, edge detecting, binary image erosion, dilation and Connected Component Analysis-Labeling. The codes are detail commented, read the comments and you will know how to use it.
+This repository contains some verilog codes for Image Process, like image filtering, image smoothing, edge detecting, binary image erosion, dilation, RGB to HSI convertion and Connected Component Analysis-Labeling. The codes are detail commented, read the comments and you will know how to use it.
 
 The Connected Component Analysis-Labeling algorithm here is a FPGA based parallel, pipelined, real time Algorithm. It only need to buffer one line of image data, no DDR needed.
 
