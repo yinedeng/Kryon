@@ -1,7 +1,5 @@
-#This code comes from: https://github.com/becomequantum/kryon
-#下面这篇文章介绍了该算法的思路,The following article introduces the idea of the algorithm,it's in Chinese, but Google translate is good enough:
-#http://blog.sina.com.cn/s/blog_539ee1ae0102xtod.html
-from DrawVideo import *
+from PIL import Image,ImageDraw,ImageFont
+import numpy as np
 import random
 import time    #在出动画结果之前需要大约50s的时间运行. It may take 50s runtime before results show out.
 import pygame  #如果动画不流畅,原因是内存不足.If the animation is not fluent, the reason is the lack of memory
@@ -13,6 +11,7 @@ import moviepy.editor as MovieEditor
 #The first is implemented by recursion. This method needs to read data randomly, it is easy to implement on PC, but it is not suitable for parallel pipeline processing on FPGA.
 #The second one is suitable for FPGA parallel pipeline processing. It only needs to cache one lines of image data to implement connected component labeling algorithm. No DDR Needed.
 
+DemoImageSize = (48, 36)
 time_start = time.time()
 LabelColor = ((66, 55, 255), (55, 177, 211), (33, 144, 33), (211, 122, 66), (177, 199, 44), (255, 111, 177),(11, 211, 99), (122, 22, 119),
               (166, 155, 55), (155, 77, 211), (133, 44, 33), (211, 122, 166), (177, 99, 144), (55, 111, 177),(11, 11, 99), (22, 122, 199))
@@ -28,9 +27,9 @@ Sum, XYmax, XYmin, Color  = 0, 1, 2, 3     #[Sum, [Xmax,Ymax],[Xmin,Ymin], color
 
 #----------------------------并行流水线法 FPGA Parallel Pipeline Method----------------------------
 ExampleImage = np.array(Image.open(TestBMP))      #重新加载示例图片. Load example image again
-bg_image = InitBackGround(ExampleImage, "连通域标记并行流水线法演示 FPGA Parallel Pipeline Method Demo",
-                          "该方法只需顺序扫描一次\nThis method only sequentially\nscan once\n"
-                          "More suitable for FPGA", textcolor= (77, 99 ,111), subtitlecolor = 'red', FPGA= True)
+#g_image = InitBackGround(ExampleImage, "连通域标记并行流水线法演示 FPGA Parallel Pipeline Method Demo",
+#                         "该方法只需顺序扫描一次\nThis method only sequentially\nscan once\n"
+#                         "More suitable for FPGA", textcolor= (77, 99 ,111), subtitlecolor = 'red', FPGA= True)
 LabelCount = 1  #标记数组初值为0,所以标记不能为从0开始. Can not be Zero, because init value of LabelArray is 0
 LabelArray = np.zeros((ExampleImage.shape[0], ExampleImage.shape[1]), np.int32) #新建一个用来存放标记值的数组. New array for storing labels
 ShapeInfoList = [[0, [0, 0], [0, 0],(),0,0]]                                    #[Sum, [Xmax,Ymax],[Xmin,Ymin], color, RealLabel]
@@ -45,6 +44,9 @@ def LabelThisDot(x, y, ShapeInfo):
     ShapeInfo[XYmin][0] = min(ShapeInfo[XYmin][0], x)
     ShapeInfo[XYmin][1] = min(ShapeInfo[XYmin][1], y)
     ShapeInfo[XLmax] = x                                #记录该行的x最大值,用于判断形状结束 Use this value to tell if a shape's labeling has been completed
+
+
+print(FPGAScanList)
 
 for y in FPGAScanList:
     for x in range(1, DemoImageSize[0] - 1):
@@ -119,4 +121,3 @@ for y in FPGAScanList:
 
 time_end = time.time()
 print('Total time:{}s'.format(time_end - time_start))
-print('Total frame', len(frame_list))
