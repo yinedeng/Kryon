@@ -23,8 +23,6 @@ if ExampleImage.shape[0] != DemoImageSize[1] or ExampleImage.shape[1] != DemoIma
     quit()
 
 FPGAScanList = list(range(1, min(DemoImageSize[1] - 1, 30)))
-#---------------------------递归法 Recursive Method------------------------
-bg_image = InitBackGround(ExampleImage,'连通域标记递归法演示 Connected Component Labeling Recursive Method Demo','该方法需要随机读取数据\nThis method needs random\nread data')
 LabelCount = 1   #用来标记连通域的标号计数
 Sum, XYmax, XYmin, Color  = 0, 1, 2, 3     #[Sum, [Xmax,Ymax],[Xmin,Ymin], color]
 
@@ -50,7 +48,6 @@ def LabelThisDot(x, y, ShapeInfo):
 
 for y in FPGAScanList:
     for x in range(1, DemoImageSize[0] - 1):
-        Neighbourhood3x3 = ExampleImage[y - 1: y + 2, x - 1: x + 2]  # 取3x3邻域,仅用于动画显示. Only used for animation
         if ExampleImage[y, x, 0] == ExampleImage[y, x, 1] == ExampleImage[y, x, 2] == 0:  #black dot
             Left, UpLeft, Up, UpRight = LabelArray[y, x - 1], LabelArray[y - 1, x - 1], LabelArray[y - 1, x], LabelArray[y - 1, x + 1]  #左,左上,上,右上四点 4 dots: Left, Left Up, Up, Up Right
             Left, UpLeft, Up, UpRight = ShapeInfoList[Left][RealLabel], ShapeInfoList[UpLeft][RealLabel], ShapeInfoList[Up][RealLabel], ShapeInfoList[UpRight][RealLabel]
@@ -60,10 +57,10 @@ for y in FPGAScanList:
                 ShapeInfo = [0, [x, y], [x, y], LabelColor[int(LabelCount % len(LabelColor))], LabelCount, x]
                 LabelThisDot(x, y, ShapeInfo)
                 ShapeInfoList.append(ShapeInfo)
-                AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor = ShapeInfo[Color], duration =ScanTime,
-                        注释1="黑点就来分析\nAnalise black dot\nNew Start Dot!",
-                        注释2="新黑点,周围没有已标记点\n用新标号标上\nNo Labeled dot around\nTag it with new Label: {}\n"
-                              "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(LabelCount, ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
+               #AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor = ShapeInfo[Color], duration =ScanTime,
+               #        注释1="黑点就来分析\nAnalise black dot\nNew Start Dot!",
+               #        注释2="新黑点,周围没有已标记点\n用新标号标上\nNo Labeled dot around\nTag it with new Label: {}\n"
+               #              "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(LabelCount, ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
                 LabelCount += 1
 
             elif ((Left != UpRight and Left > 0) or (UpLeft != UpRight and UpLeft > 0)) and UpRight > 0:  #Two different labeled dot around
@@ -83,12 +80,12 @@ for y in FPGAScanList:
                 ShapeInfo[XYmin][1] = min(ShapeInfo[XYmin][1], ShapeInfoLater[XYmin][1])
                 ShapeInfo[XLmax]    = max(ShapeInfo[XLmax], ShapeInfoLater[XLmax])
                 LabelThisDot(x, y, ShapeInfo)
-                AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor = ShapeInfo[Color], diff = True,
-                        duration=ScanTime,
-                        注释1="黑点就来分析\nAnalise black dot",
-                        注释2="周围有两个标号不同的已标记点\n需把后面的标号映射到前面的标号\n把统计数据也合并过去\n并把这个点标上前面的标号\n"
-                              "Two Labeled dot around\nNeeds map later label to\nprevious one and combine data\nand Tag it with pre label: {}\n"
-                              "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(ShapeInfo[RealLabel],ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
+               #AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor = ShapeInfo[Color], diff = True,
+               #        duration=ScanTime,
+               #        注释1="黑点就来分析\nAnalise black dot",
+               #        注释2="周围有两个标号不同的已标记点\n需把后面的标号映射到前面的标号\n把统计数据也合并过去\n并把这个点标上前面的标号\n"
+               #              "Two Labeled dot around\nNeeds map later label to\nprevious one and combine data\nand Tag it with pre label: {}\n"
+               #              "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(ShapeInfo[RealLabel],ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
 
             else:  #Only One Label value around
                 if Left != 0:     ShapeInfo = ShapeInfoList[Left]
@@ -96,10 +93,10 @@ for y in FPGAScanList:
                 elif Up != 0:     ShapeInfo = ShapeInfoList[Up]
                 else:             ShapeInfo = ShapeInfoList[UpRight]
                 LabelThisDot(x, y, ShapeInfo)
-                AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor = ShapeInfo[Color], duration= ScanTime,
-                        注释1="黑点就来分析\nAnalise black dot",
-                        注释2="该黑点周围只有一种已标标号\n用该标号标上\nOnly One Label value around\nTag it with this Label: {}\n"
-                              "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(ShapeInfo[RealLabel], ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
+               #AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor = ShapeInfo[Color], duration= ScanTime,
+               #        注释1="黑点就来分析\nAnalise black dot",
+               #        注释2="该黑点周围只有一种已标标号\n用该标号标上\nOnly One Label value around\nTag it with this Label: {}\n"
+               #              "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(ShapeInfo[RealLabel], ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
 
         else:  #white dot
             if ExampleImage[y, x - 1, 0] == ExampleImage[y, x - 1, 1] == ExampleImage[y, x - 1, 2] == \
@@ -109,21 +106,17 @@ for y in FPGAScanList:
                 ShapeInfo = ShapeInfoList[ShapeInfoList[LabelArray[y - 1, x]][RealLabel]]  #取出正上方点的信息来判断它是不是一个连通域的最后结束点.
                                                                                            #Get the info of the dot on top and judge if it is the lass ending dot of a connected area
                 if ShapeInfo[XLmax] == x and  ShapeInfo[XYmax][1] == y - 1:
-                    AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor = "grey", Shape_info = ShapeInfo, duration = FinishTime,
-                            注释1 = "白点时需要检查\n其上方的形状\n有无标记完成",
-                            注释2 = "Check if any shape has\nfinished labeling\n"
-                                    "有形状完成啦!\nNo. {} has Finished: \n"
-                                    "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(ShapeInfo[RealLabel],ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
+                   #AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor = "grey", Shape_info = ShapeInfo, duration = FinishTime,
+                   #        注释1 = "白点时需要检查\n其上方的形状\n有无标记完成",
+                   #        注释2 = "Check if any shape has\nfinished labeling\n"
+                   #                "有形状完成啦!\nNo. {} has Finished: \n"
+                   #                "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(ShapeInfo[RealLabel],ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
                     print("FPGA: Label:{} Sum: {} XYmax: {} XYmin: {}".format(LabelCount, ShapeInfo[Sum],ShapeInfo[XYmax], ShapeInfo[XYmin]))
                     continue
-            AddClip(bg_image, x, y, Neighbourhood3x3, 注释1="白点时需要检查\n其上方的形状\n有无标记完成",
-                    注释2="Check if any shape has\nfinished labeling")
+            #AddClip(bg_image, x, y, Neighbourhood3x3, 注释1="白点时需要检查\n其上方的形状\n有无标记完成", 注释2="Check if any shape has\nfinished labeling")
 
 
 
 time_end = time.time()
 print('Total time:{}s'.format(time_end - time_start))
 print('Total frame', len(frame_list))
-
-
-exit(0)
