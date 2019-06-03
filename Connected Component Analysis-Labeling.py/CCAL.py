@@ -105,3 +105,36 @@ for ShapeInfo in ShapeInfoList:
         print(ShapeInfo, x, y)
 
 cv2.imwrite("out.jpg", img)
+
+GoldenShapeInfoList = []
+GoldenShapeInfoList.append([426, 145432, 38989, [352, 104], [330, 80], 4, 341, 1])
+GoldenShapeInfoList.append([1, 352, 123, [352, 123], [352, 123], 5, 352, 1])
+GoldenShapeInfoList.append([17, 6166, 2771, [364, 165], [361, 160], 6, 363, 1])
+GoldenShapeInfoList.append([18, 5891, 2980, [330, 168], [324, 163], 7, 330, 1])
+GoldenShapeInfoList.append([254, 10988, 54727, [48, 231], [38, 199], 9, 45, 1])
+GoldenShapeInfoList.append([76, 1514, 16338, [22, 228], [18, 204], 10, 20, 1])
+GoldenShapeInfoList.append([106, 1153, 22718, [14, 224], [8, 205], 11, 11, 1])
+GoldenShapeInfoList.append([160, 11587, 34551, [76, 227], [68, 205], 13, 74, 1])
+GoldenShapeInfoList.append([83, 37639, 17774, [462, 217], [448, 208], 14, 462, 1])
+GoldenShapeInfoList.append([13, 1148, 2886, [90, 223], [86, 221], 15, 90, 1])
+GoldenShapeInfoList.append([8, 3290, 1957, [412, 246], [410, 243], 16, 412, 1])
+GoldenShapeInfoList.append([35, 14138, 8873, [406, 258], [402, 249], 17, 404, 1])
+
+i = 0
+for ShapeInfo in ShapeInfoList:
+    if ShapeInfo[Candidate] == 1:
+        if (ShapeInfo[Sum] != GoldenShapeInfoList[i][Sum] or 
+            ShapeInfo[SumX] != GoldenShapeInfoList[i][SumX] or
+            ShapeInfo[SumY] != GoldenShapeInfoList[i][SumY] or
+            ShapeInfo[XYmax][0] != GoldenShapeInfoList[i][XYmax][0] or
+            ShapeInfo[XYmax][1] != GoldenShapeInfoList[i][XYmax][1] or
+            ShapeInfo[XYmin][0] != GoldenShapeInfoList[i][XYmin][0] or
+            ShapeInfo[XYmin][1] != GoldenShapeInfoList[i][XYmin][1] or
+            ShapeInfo[RealLabel] != GoldenShapeInfoList[i][RealLabel] or
+            ShapeInfo[XLmax] != GoldenShapeInfoList[i][XLmax]):
+            print(i, "miss matched: ")
+            print(ShapeInfo)
+            print(GoldenShapeInfoList[i])
+            break
+
+        i = i + 1
