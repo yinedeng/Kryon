@@ -1,52 +1,34 @@
 from PIL import Image,ImageDraw,ImageFont
 import numpy as np
-import random
-import time    #在出动画结果之前需要大约50s的时间运行. It may take 50s runtime before results show out.
-import pygame  #如果动画不流畅,原因是内存不足.If the animation is not fluent, the reason is the lack of memory
-import moviepy.editor as MovieEditor
-#连通域识别算法动画演示代码. 本代码演示了两种连通域识别算法:
-#一是用递归的方法实现, 这种方法需要随机读取数据, 在PC上很容易实现, 但并不适合FPGA并行流水线算法的实现.
-#二是适合FPGA并行流水线实现的连通域识别算法, 只需缓存两行图像即可实现连通域识别. 不需要外接DDR
-#Connected component labeling algorithm animation demo code. This code demonstrates two kinds of connected component labeling algorithm:
-#The first is implemented by recursion. This method needs to read data randomly, it is easy to implement on PC, but it is not suitable for parallel pipeline processing on FPGA.
-#The second one is suitable for FPGA parallel pipeline processing. It only needs to cache one lines of image data to implement connected component labeling algorithm. No DDR Needed.
 
+TestBMP = '48x36.bmp'
 DemoImageSize = (48, 36)
-time_start = time.time()
 LabelColor = ((66, 55, 255), (55, 177, 211), (33, 144, 33), (211, 122, 66), (177, 199, 44), (255, 111, 177),(11, 211, 99), (122, 22, 119),
               (166, 155, 55), (155, 77, 211), (133, 44, 33), (211, 122, 166), (177, 99, 144), (55, 111, 177),(11, 11, 99), (22, 122, 199))
-TestBMP = '48x36.bmp'
-ExampleImage = np.array(Image.open(TestBMP))      #加载示例图片. Load example image
-if ExampleImage.shape[0] != DemoImageSize[1] or ExampleImage.shape[1] != DemoImageSize[0]:
-    print("算法演示图片尺寸必须是The Size of the demo image has to be: {}x{}!".format(DemoImageSize[0], DemoImageSize[1]))
-    quit()
 
 FPGAScanList = list(range(1, min(DemoImageSize[1] - 1, 30)))
-LabelCount = 1   #用来标记连通域的标号计数
 Sum, XYmax, XYmin, Color  = 0, 1, 2, 3     #[Sum, [Xmax,Ymax],[Xmin,Ymin], color]
 
 #----------------------------并行流水线法 FPGA Parallel Pipeline Method----------------------------
 ExampleImage = np.array(Image.open(TestBMP))      #重新加载示例图片. Load example image again
-#g_image = InitBackGround(ExampleImage, "连通域标记并行流水线法演示 FPGA Parallel Pipeline Method Demo",
-#                         "该方法只需顺序扫描一次\nThis method only sequentially\nscan once\n"
-#                         "More suitable for FPGA", textcolor= (77, 99 ,111), subtitlecolor = 'red', FPGA= True)
 LabelCount = 1  #标记数组初值为0,所以标记不能为从0开始. Can not be Zero, because init value of LabelArray is 0
 LabelArray = np.zeros((ExampleImage.shape[0], ExampleImage.shape[1]), np.int32) #新建一个用来存放标记值的数组. New array for storing labels
 ShapeInfoList = [[0, [0, 0], [0, 0],(),0,0]]                                    #[Sum, [Xmax,Ymax],[Xmin,Ymin], color, RealLabel]
 RealLabel, XLmax = 4, 5
 
+print(FPGAScanList)
+print(ExampleImage.shape[0])
+print(ExampleImage.shape[1])
+
 def LabelThisDot(x, y, ShapeInfo):
-    LabelArray[y, x] = ShapeInfo[RealLabel]             #在标记数组上做标记. Label this dot in Label Array
+    LabelArray[y, x] = ShapeInfo[RealLabel]            #在标记数组上做标记. Label this dot in Label Array
     ExampleImage[y, x] = ShapeInfo[Color]
-    ShapeInfo[Sum] += 1                                 #统计信息. Get Statistics  [Sum, [Xmax,Ymax],[Xmin,Ymin], color]
+    ShapeInfo[Sum] += 1                                #统计信息. Get Statistics  [Sum, [Xmax,Ymax],[Xmin,Ymin], color]
     ShapeInfo[XYmax][0] = max(ShapeInfo[XYmax][0], x)
     ShapeInfo[XYmax][1] = max(ShapeInfo[XYmax][1], y)
     ShapeInfo[XYmin][0] = min(ShapeInfo[XYmin][0], x)
     ShapeInfo[XYmin][1] = min(ShapeInfo[XYmin][1], y)
-    ShapeInfo[XLmax] = x                                #记录该行的x最大值,用于判断形状结束 Use this value to tell if a shape's labeling has been completed
-
-
-print(FPGAScanList)
+    ShapeInfo[XLmax] = x                               #记录该行的x最大值,用于判断形状结束 Use this value to tell if a shape's labeling has been completed
 
 for y in FPGAScanList:
     for x in range(1, DemoImageSize[0] - 1):
@@ -116,8 +98,4 @@ for y in FPGAScanList:
                     print("FPGA: Label:{} Sum: {} XYmax: {} XYmin: {}".format(LabelCount, ShapeInfo[Sum],ShapeInfo[XYmax], ShapeInfo[XYmin]))
                     continue
             #AddClip(bg_image, x, y, Neighbourhood3x3, 注释1="白点时需要检查\n其上方的形状\n有无标记完成", 注释2="Check if any shape has\nfinished labeling")
-
-
-
-time_end = time.time()
-print('Total time:{}s'.format(time_end - time_start))
+   
