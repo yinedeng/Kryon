@@ -1,20 +1,16 @@
-from PIL import Image,ImageDraw,ImageFont
 import numpy as np
-
-TestBMP = '48x36.bmp'
-DemoImageSize = (48, 36)
-FPGAScanList = list(range(1, min(DemoImageSize[1] - 1, 30)))
-Sum, XYmax, XYmin, Color  = 0, 1, 2, 3     #[Sum, [Xmax,Ymax],[Xmin,Ymin], color]
+import cv2
+import sys
 
 #----------------------------并行流水线法 FPGA Parallel Pipeline Method----------------------------
-#ExampleImage = np.array(Image.open(TestBMP))      #重新加载示例图片. Load example image again
-r,g,b = Image.open(TestBMP).split()
-ExampleImage = np.array(g)      #重新加载示例图片. Load example image again
+img = cv2.imread(sys.argv[1])
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+ExampleImage = np.array(gray)      #重新加载示例图片. Load example image again
 
 LabelCount = 1  #标记数组初值为0,所以标记不能为从0开始. Can not be Zero, because init value of LabelArray is 0
-LabelArray = np.zeros((ExampleImage.shape[0], ExampleImage.shape[1]), np.int32) #新建一个用来存放标记值的数组. New array for storing labels
+LabelArray = np.zeros((ExampleImage.shape[0], ExampleImage.shape[1]), np.int8) #新建一个用来存放标记值的数组. New array for storing labels
 ShapeInfoList = [[0, [0, 0], [0, 0],0,0]] #[Sum, [Xmax,Ymax],[Xmin,Ymin], RealLabel, XLmax]
-RealLabel, XLmax = 3, 4
+Sum, XYmax, XYmin, RealLabel, XLmax  = 0, 1, 2, 3, 4
 
 def LabelThisDot(x, y, ShapeInfo):
     LabelArray[y, x] = ShapeInfo[RealLabel]            #在标记数组上做标记. Label this dot in Label Array
@@ -25,8 +21,8 @@ def LabelThisDot(x, y, ShapeInfo):
     ShapeInfo[XYmin][1] = min(ShapeInfo[XYmin][1], y)
     ShapeInfo[XLmax] = x                               #记录该行的x最大值,用于判断形状结束 Use this value to tell if a shape's labeling has been completed
 
-for y in FPGAScanList:
-    for x in range(1, DemoImageSize[0] - 1):
+for y in range(1, gray.shape[0] - 1):
+    for x in range(1, gray.shape[1] - 1):
         if ExampleImage[y, x] == 0:  #black dot
             Left, UpLeft, Up, UpRight = LabelArray[y, x - 1], LabelArray[y - 1, x - 1], LabelArray[y - 1, x], LabelArray[y - 1, x + 1]  #左,左上,上,右上四点 4 dots: Left, Left Up, Up, Up Right
             Left, UpLeft, Up, UpRight = ShapeInfoList[Left][RealLabel], ShapeInfoList[UpLeft][RealLabel], ShapeInfoList[Up][RealLabel], ShapeInfoList[UpRight][RealLabel]
@@ -78,10 +74,7 @@ for y in FPGAScanList:
                #              "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(ShapeInfo[RealLabel], ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
 
         else:  #white dot
-            if ExampleImage[y, x - 1] == \
-               ExampleImage[y, x + 1] == 255 and \
-               ExampleImage[y - 1, x + 1] == 255 and \
-               ExampleImage[y - 1, x] == 0:   #该白点的左右两边和右上也是白点,上方不是白点. Left, right and up right dots are white too, and not white on top
+            if ExampleImage[y, x - 1] == ExampleImage[y, x + 1] == ExampleImage[y - 1, x + 1] == 255 and ExampleImage[y - 1, x] == 0:   #该白点的左右两边和右上也是白点,上方不是白点. Left, right and up right dots are white too, and not white on top
                 ShapeInfo = ShapeInfoList[ShapeInfoList[LabelArray[y - 1, x]][RealLabel]]  #取出正上方点的信息来判断它是不是一个连通域的最后结束点.
                                                                                            #Get the info of the dot on top and judge if it is the lass ending dot of a connected area
                 if ShapeInfo[XLmax] == x and  ShapeInfo[XYmax][1] == y - 1:
@@ -91,5 +84,3 @@ for y in FPGAScanList:
                    #                "有形状完成啦!\nNo. {} has Finished: \n"
                    #                "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(ShapeInfo[RealLabel],ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
                     print("FPGA: Label:{} Sum: {} XYmax: {} XYmin: {}".format(LabelCount, ShapeInfo[Sum],ShapeInfo[XYmax], ShapeInfo[XYmin]))
-                    continue
-            #AddClip(bg_image, x, y, Neighbourhood3x3, 注释1="白点时需要检查\n其上方的形状\n有无标记完成", 注释2="Check if any shape has\nfinished labeling")
