@@ -7,6 +7,13 @@ img = cv2.imread(sys.argv[1])
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 ExampleImage = np.array(gray)      #重新加载示例图片. Load example image again
 
+for y in range(0, gray.shape[0]):
+    for x in range(0, gray.shape[1]):
+        if ExampleImage[y, x] < 200: 
+            ExampleImage[y, x] = 255 
+        else:
+            ExampleImage[y, x] = 0
+
 LabelCount = 1  #标记数组初值为0,所以标记不能为从0开始. Can not be Zero, because init value of LabelArray is 0
 LabelArray = np.zeros((ExampleImage.shape[0], ExampleImage.shape[1]), np.int8) #新建一个用来存放标记值的数组. New array for storing labels
 ShapeInfoList = [[0, [0, 0], [0, 0],0,0]] #[Sum, [Xmax,Ymax],[Xmin,Ymin], RealLabel, XLmax]
@@ -84,3 +91,6 @@ for y in range(1, gray.shape[0] - 1):
                    #                "有形状完成啦!\nNo. {} has Finished: \n"
                    #                "总点数Total Num of dots: {}\nXYmax: {} XYmin: {}".format(ShapeInfo[RealLabel],ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
                     print("FPGA: Label:{} Sum: {} XYmax: {} XYmin: {}".format(LabelCount, ShapeInfo[Sum],ShapeInfo[XYmax], ShapeInfo[XYmin]))
+                    cv2.rectangle(img, (ShapeInfo[XYmin][0], ShapeInfo[XYmin][1]), (ShapeInfo[XYmax][0], ShapeInfo[XYmax][1]), (255, 0, 255), 1)
+
+cv2.imwrite("out.jpg", img)
