@@ -22,49 +22,11 @@ if ExampleImage.shape[0] != DemoImageSize[1] or ExampleImage.shape[1] != DemoIma
     print("算法演示图片尺寸必须是The Size of the demo image has to be: {}x{}!".format(DemoImageSize[0], DemoImageSize[1]))
     quit()
 
-RecursionScanList = [1,2,4,10,16,21]    #控制要扫描多少行. Control how many lines to scan
 FPGAScanList = list(range(1, min(DemoImageSize[1] - 1, 30)))
 #---------------------------递归法 Recursive Method------------------------
 bg_image = InitBackGround(ExampleImage,'连通域标记递归法演示 Connected Component Labeling Recursive Method Demo','该方法需要随机读取数据\nThis method needs random\nread data')
 LabelCount = 1   #用来标记连通域的标号计数
-DirectionList = [(0,1),(0,-1),(1,0),(1,1),(1,-1),(-1,-1),(-1,0),(-1,1)]       #8邻域. 8 Neighbourhoods Right,Left,Down...
-random.shuffle(DirectionList)   #You can shuffle it for fun
 Sum, XYmax, XYmin, Color  = 0, 1, 2, 3     #[Sum, [Xmax,Ymax],[Xmin,Ymin], color]
-
-def LabelBlackDot(x, y, ShapeInfo):
-    ExampleImage[y, x] = ShapeInfo[Color]                               #给该点标上颜色. Color this dot
-    Neighbourhood3x3 = ExampleImage[y - 1 : y + 2, x - 1 : x + 2]
-    ShapeInfo[Sum]   += 1                                               #统计信息. Get Statistics
-    ShapeInfo[XYmax][0] = max(ShapeInfo[XYmax][0], x)
-    ShapeInfo[XYmax][1] = max(ShapeInfo[XYmax][1], y)
-    ShapeInfo[XYmin][0] = min(ShapeInfo[XYmin][0], x)
-    ShapeInfo[XYmin][1] = min(ShapeInfo[XYmin][1], y)
-    AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor= ShapeInfo[Color], duration = ScanTime,
-            注释1="黑点就来分析\nAnalise black dot",
-            注释2="Number: {} 号连通域\n点数Num of dots: {}\n"
-                    "XYmax: {} XYmin: {}".format(LabelCount, ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
-    for D in DirectionList:
-        x1, y1 = x + D[1],y + D[0]
-        if ExampleImage[y1, x1, 0] == 0 :        #If there is any black dot in Neighbourhood, then recursively call 'LabelBlackDot'
-            LabelBlackDot(x1, y1, ShapeInfo)     #如果该点邻域中还有其它未标记黑点,就递归调用 'LabelBlackDot'
-
-
-#循环遍历图片寻找未标记黑点并标记它们. Loop traversing the image to find unlabeled black dots and label them.
-for y in RecursionScanList:
-    for x in range(1, DemoImageSize[0] - 1):
-        Neighbourhood3x3 = ExampleImage[y - 1 : y + 2, x - 1 : x + 2]   #取3x3邻域
-        if ExampleImage[y, x, 0] == ExampleImage[y, x, 1] ==  ExampleImage[y, x, 2] == 0:
-            ShapeInfo = [0, [x, y], [x, y], LabelColor[int(LabelCount % len(LabelColor))]]  #标记并统计该连通域的点数以及最大最小坐标等信息. [Sum, [Xmax,Ymax],[Xmin,Ymin], color]
-            LabelBlackDot(x, y, ShapeInfo)      #Label and Statistics the number of points and maximum and minimum coordinates of this connected component.
-            AddClip(bg_image, x, y, Neighbourhood3x3, LabelColor = ShapeInfo[Color], Shape_info = ShapeInfo, duration = FinishTime,
-                    注释1="完成一个标记\nFinish one labeling",
-                    注释2="Number: {} 号连通域\n总点数Total Num of dots: {}\n"
-                          "XYmax: {} XYmin: {}".format(LabelCount, ShapeInfo[Sum], tuple(ShapeInfo[XYmax]), tuple(ShapeInfo[XYmin])))
-            print("Recursion: Label:{} Sum: {} XYmax: {} XYmin: {}".format(LabelCount, ShapeInfo[Sum],ShapeInfo[XYmax],ShapeInfo[XYmin] ))
-            LabelCount += 1     #标完一个连通域后就+1. After finish one labeling, the LabelCount will += 1
-        else:
-            AddClip(bg_image, x, y ,Neighbourhood3x3, 注释1="白点或已标点就飘过\nSkip white and \nlabeled dot")
-
 
 #----------------------------并行流水线法 FPGA Parallel Pipeline Method----------------------------
 ExampleImage = np.array(Image.open(TestBMP))      #重新加载示例图片. Load example image again
@@ -164,64 +126,4 @@ print('Total time:{}s'.format(time_end - time_start))
 print('Total frame', len(frame_list))
 
 
-#预览视频. Preview video
-if len(frame_list) == 0:
-    print("Nothing to Preview")
-    quit()
-pygame.init()
-screen = pygame.display.set_mode(VideoSize)
-pygame.display.set_caption("按键KEY: 空格暂停'SPACE': pause. 'W S A D': 上下左右Up Down Left Right. "
-                           "'ENTER': 跳到结尾 Jump to End 'F1': 保存当前图片(暂停时) Save current image when pause")
-clock = pygame.time.Clock()
-frame_index = 0
-QuitPreview = False
-Pause = False
-Tip = 0
-pygame.key.set_repeat(150,10)
-
-def show_text(surface_handle, pos, text, color, font_size = 20):
-    cur_font = pygame.font.Font("msyh.ttf", font_size)
-    text_fmt = cur_font.render(text, 1, color, (255,255,255)) # 设置文字内容,白色背景
-    surface_handle.blit(text_fmt, pos)                        # 绘制文字
-
-def NextFrame(n):
-    global frame_index
-    if frame_index < len(frame_list) - n - 1: frame_index += n
-    else: frame_index = 0
-def PreFrame(n):
-    global frame_index
-    if frame_index > n: frame_index -= n
-    else: frame_index = len(frame_list) - 1
-
-while not QuitPreview:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:       QuitPreview = True
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE: Pause = not Pause
-            if event.key == pygame.K_d or event.key == pygame.K_RIGHT:     NextFrame(1)
-            if event.key == pygame.K_a or event.key == pygame.K_LEFT :     PreFrame(1)
-            if event.key == pygame.K_s or event.key == pygame.K_DOWN :     NextFrame(46)
-            if event.key == pygame.K_w or event.key == pygame.K_UP   :     PreFrame(46)
-            if event.key == pygame.K_F1:
-                if Pause:
-                    Image.fromarray(frame_list[frame_index]).save("Frog" + str(frame_index) + ".bmp", format = "bmp" )
-                    Tip = 25
-            if event.key == pygame.K_RETURN:
-                frame_index = len(frame_list) - 1
-                Pause = True
-
-    if not Tip:
-        pygame.surfarray.blit_array(screen,frame_list[frame_index].transpose((1,0,2)))  #此处图像矩阵需要转置
-    else:
-        show_text(screen, 标题位置,  "图片已保存为Image Saved as: Frog" + str(frame_index) + ".bmp", (0, 0, 177), 40)
-        Tip -= 1
-    if not Pause:
-        NextFrame(1)
-    pygame.display.update()
-    clock.tick(10)
-pygame.quit()
-
-
-
-
-
+exit(0)
